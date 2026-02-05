@@ -66,13 +66,15 @@ class THWCFD_Block {
         $remove_optional = apply_filters('thwcfe_remove_optional_label', false);
         $additional_fields = array_diff_key($fieldset, $default_address_fields);
         foreach ($additional_fields as $field_data) {
-			if($field_data['type'] === 'checkbox'){
-				//checkbox field required not supported
-				$field_data['required'] = false;
-			}
+			
+            // WooCommerce < 9.8.0 does not support required checkboxes
+            if((version_compare(THWCFD_Utils::get_wc_version(), '9.8.0', "<")) && $field_data['type'] === 'checkbox') {
+                $field_data['required'] = false;
+            }
             
             if (isset($field_data['label'])) {
-                $field_data['label'] = __($field_data['label'], 'woo-checkout-field-editor-pro');
+                //$field_data['label'] = __($field_data['label'], 'woo-checkout-field-editor-pro');
+                $field_data['label'] = THWCFD_Utils::translate_dynamic_text($field_data['label'], 'label');
             }
 			woocommerce_register_additional_checkout_field(
 				array(
@@ -80,7 +82,7 @@ class THWCFD_Block {
 					'label'       => $field_data['label'],
                     'optionalLabel' =>  $remove_optional ? $field_data['label'] : sprintf(
                         /* translators: %s Field label. */
-                        __( '%s (optional)', 'woocommerce' ),
+                        __( '%s (optional)', 'woocommerce' ), // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch
                         $field_data['label']
 				    ),
 					'placeholder' => $field_data['placeholder'],
@@ -101,6 +103,7 @@ class THWCFD_Block {
     public function get_field_options($options){
 		$field_options = array();
 		foreach ($options as $option) {
+            $option['text'] = THWCFD_Utils::translate_dynamic_text($option['text'], 'option');
 			$field_options[] = array(
 				'label' => $option['text'],
 				'value' => $option['key'],
@@ -169,12 +172,22 @@ class THWCFD_Block {
                 continue;
             }
             if (isset($field_set[$key])) {
-                $field['index'] = $field_set[$key]['priority'] ?? $field['index'];
-                $field['label'] = $field_set[$key]['label']?? $field['label'];
-                if($remove_optional){
-                    $field['optionalLabel'] = $field_set[$key]['label']?? $field['optionalLabel'];
-                }else{
-                    $field['optionalLabel'] = $field_set[$key]['label']? $field_set[$key]['label'].' (optional)' : $field['optionalLabel'];
+                //$field['index'] = $field_set[$key]['priority'] ?? $field['index'];
+                $field['index'] = ! empty( $field_set[$key]['priority'] )? $field_set[$key]['priority'] : $field['index'];
+               
+                if(apply_filters('thwcfe_block_address_field_dynamic_label', true)){
+                    $field['label'] = $field_set[$key]['label']?? $field['label'];
+                
+                    if($remove_optional){
+                        $field['optionalLabel'] = $field_set[$key]['label']?? $field['optionalLabel'];
+                    }else{
+                        //$field['optionalLabel'] = $field_set[$key]['label']? $field_set[$key]['label'].' (optional)' : $field['optionalLabel'];
+                        $field['optionalLabel'] = !empty($field_set[$key]['label']) ? sprintf(
+                            /* translators: %s Field label. */
+                            __( '%s (optional)', 'woo-checkout-field-editor-pro' ),
+                            $field_set[$key]['label']
+                        ) : $field['optionalLabel'];
+                    }
                 }
                 $field['required'] = $field_set[$key]['required'] ?? $field['required'];
                 
@@ -183,7 +196,8 @@ class THWCFD_Block {
             }
 
             if(isset($field['label'])){
-                $field['label'] = __($field['label'], 'woo-checkout-field-editor-pro');
+               // $field['label'] = __($field['label'], 'woo-checkout-field-editor-pro');
+                $field['label'] = THWCFD_Utils::translate_dynamic_text($field['label'], 'label');
             }
         } 
         
@@ -214,7 +228,8 @@ class THWCFD_Block {
             }
 
             if(isset($field['label'])){
-                $field['label'] = __($field['label'], 'woo-checkout-field-editor-pro');
+                //$field['label'] = __($field['label'], 'woo-checkout-field-editor-pro');
+                $field['label'] = THWCFD_Utils::translate_dynamic_text($field['label'], 'label');
             }
         }
         unset($field);
@@ -241,10 +256,10 @@ class THWCFD_Block {
             switch ($rule) {
                 case 'email':
                     if (!empty($field_value) && !is_email($field_value)) {
-                        // Translators: %s is the title of the field being validated.
                         $errors->add(
                             'invalid_email_field',
                             sprintf(
+                                /* translators: %s is the title of the field being validated. */
                                 __('The provided %s is not a valid email address.', 'woo-checkout-field-editor-pro'),
                                 esc_html($field_properties['title'] ?? 'value')
                             )
@@ -254,10 +269,11 @@ class THWCFD_Block {
     
                 case 'phone':
                     if (!empty($field_value) && !\WC_Validation::is_phone($field_value)) {
-                        // Translators: %s is the title of the field being validated.
+                        
                         $errors->add(
                             'invalid_phone_field',
                             sprintf(
+                                // translators: %s is the title of the field being validated.
                                 __('The provided %s is not a valid phone number.', 'woo-checkout-field-editor-pro'),
                                 esc_html($field_properties['title'] ?? 'value')
                             )
@@ -267,10 +283,11 @@ class THWCFD_Block {
     
                 case 'postcode':
                     if (!empty($field_value) && !\WC_Validation::is_postcode($field_value)) {
-                        // Translators: %s is the title of the field being validated.
+                        
                         $errors->add(
                             'invalid_postcode',
                             sprintf(
+                                // translators: %s is the title of the field being validated.
                                 __('The provided %s is not a valid postcode.', 'woo-checkout-field-editor-pro'),
                                 esc_html($field_properties['title'] ?? 'value')
                             )
@@ -342,6 +359,7 @@ class THWCFD_Block {
                 continue;
             }
             $order_meta_fields = array();
+            $user_meta_fields = array();
             foreach($section_fields as $field_key => $field_value){
                 if (!isset($section->fields[$field_key])) {
                     continue;
@@ -358,10 +376,12 @@ class THWCFD_Block {
                 }
                 if (($field->property_set['user_meta'])) {
                     $user_meta_updates[$field_key] = $field_value;
+                    $user_meta_fields[$field_key] = $field_value;
                 }
                 
             }
             $order_meta_updates[$section_key] = $order_meta_fields;
+            $user_meta_updates[$section_key] = $user_meta_fields;
 		}
         if (!empty($order_meta_updates)) {
             foreach ($order_meta_updates as $key => $value) {
@@ -371,7 +391,7 @@ class THWCFD_Block {
         }
         if (!empty($user_meta_updates)) {
             $user_id = $order->get_user_id();
-            foreach ($order_meta_updates as $key => $value) {
+            foreach ($user_meta_updates as $key => $value) {
                 update_user_meta($user_id, $key, $value );
             }
         }

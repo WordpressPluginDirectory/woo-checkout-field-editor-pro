@@ -14,6 +14,7 @@ if(!class_exists('THWCFD_Admin_Settings')):
 
 abstract class THWCFD_Admin_Settings{
 	protected $page_id = '';
+	protected $c_type 	  = '';
 	protected $section_id = '';
 	
 	protected $tabs = '';
@@ -21,8 +22,8 @@ abstract class THWCFD_Admin_Settings{
 
 	public function __construct() {
 		$this->tabs = array(
-			'fields' => __('Classic Checkout Fields', 'woo-checkout-field-editor-pro'),
-			'block_fields' => __('Block Checkout Fields', 'woo-checkout-field-editor-pro'),
+			'fields' => __('Checkout Fields', 'woo-checkout-field-editor-pro'),
+			//'block_fields' => __('Block Checkout Fields', 'woo-checkout-field-editor-pro'),
 			'advanced_settings' => __('Advanced Settings', 'woo-checkout-field-editor-pro'),
 			'pro' => __('Premium Features', 'woo-checkout-field-editor-pro'),
 			'themehigh_plugins' => __('Other Free Plugins', 'woo-checkout-field-editor-pro'),
@@ -35,6 +36,10 @@ abstract class THWCFD_Admin_Settings{
 
 	public function get_current_tab(){
 		return $this->page_id;
+	}
+
+	public function get_current_c_type(){
+		return isset( $_GET['c_type'] ) ? sanitize_key( $_GET['c_type'] ) : 'classic';
 	}
 	
 	public function get_current_section(){
@@ -77,10 +82,13 @@ abstract class THWCFD_Admin_Settings{
 	// 	echo '</ul>';
 	// }	
 	
-	public function get_admin_url($tab = false, $section = false){
+	public function get_admin_url($tab = false, $c_type = false,$section = false){
 		$url = 'admin.php?page=checkout_form_designer';
 		if($tab && !empty($tab)){
 			$url .= '&tab='. $tab;
+		}
+		if($c_type && !empty($c_type)){
+			$url .= '&c_type='. $c_type;
 		}
 		if($section && !empty($section)){
 			$url .= '&section='. $section;
@@ -148,9 +156,9 @@ abstract class THWCFD_Admin_Settings{
 			), $atts );
 		
 			$ftype     = isset($field['type']) ? $field['type'] : 'text';
-			$flabel    = isset($field['label']) && !empty($field['label']) ? __($field['label'], 'woo-checkout-field-editor-pro') : '';
-			$sub_label = isset($field['sub_label']) && !empty($field['sub_label']) ? __($field['sub_label'], 'woo-checkout-field-editor-pro') : '';
-			$tooltip   = isset($field['hint_text']) && !empty($field['hint_text']) ? __($field['hint_text'], 'woo-checkout-field-editor-pro') : '';
+			$flabel    = isset($field['label']) && !empty($field['label']) ? $field['label'] : '';
+			$sub_label = isset($field['sub_label']) && !empty($field['sub_label']) ? $field['sub_label'] : '';
+			$tooltip   = isset($field['hint_text']) && !empty($field['hint_text']) ? $field['hint_text'] : '';
 			
 			$field_html = '';
 			
@@ -249,7 +257,7 @@ abstract class THWCFD_Admin_Settings{
 			), $atts );
 		
 			$fid 	= 'a_f'. $field['name'];
-			$flabel = isset($field['label']) && !empty($field['label']) ? __($field['label'], 'woo-checkout-field-editor-pro') : '';
+			$flabel = isset($field['label']) && !empty($field['label']) ? $field['label'] : '';
 			
 			$field_props  = $this->prepare_form_field_props($field, $atts);
 			$field_props .= isset($field['checked']) && $field['checked'] === 1 ? ' checked' : '';

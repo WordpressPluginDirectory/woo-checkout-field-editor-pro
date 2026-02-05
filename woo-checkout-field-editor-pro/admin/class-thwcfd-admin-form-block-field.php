@@ -379,7 +379,7 @@ class THWCFD_Admin_Form_Block_Field extends THWCFD_Admin_Form{
 	
 	private function render_form_field_checkbox( $section = '' ){
 		$value_props = $this->field_props['value'];
-		$value_props['label'] = __('Value', 'woocommerce');
+		$value_props['label'] = __('Value', 'woo-checkout-field-editor-pro');
 
 		?>
         <table id="thwcfd_field_form_id_checkbox" class="thwcfd_field_form_table" width="100%" style="display:none;">
@@ -390,7 +390,7 @@ class THWCFD_Admin_Form_Block_Field extends THWCFD_Admin_Form{
 			if( $section != 'address' ){
 				$this->render_form_elm_row_cb($this->field_props['checked']);
 			}
-			//$this->render_form_elm_row_cb($this->field_props['required']);
+			$this->render_form_elm_row_cb($this->field_props['required']);
 			$this->render_form_elm_row_cb($this->field_props['enabled']);
 
 			$this->render_form_elm_row_cb($this->field_props['order_meta'], array(), $section);
@@ -468,7 +468,7 @@ class THWCFD_Admin_Form_Block_Field extends THWCFD_Admin_Form{
 		
 		?>
 		<tr>
-			<td class="sub-title"><?php esc_html_e('Options', 'woocommerce'); ?></td>
+			<td class="sub-title"><?php esc_html_e('Options', 'woo-checkout-field-editor-pro'); ?></td>
 			<?php $this->render_form_fragment_tooltip(); ?>
 			<td></td>
 		</tr>
